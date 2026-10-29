@@ -28,10 +28,6 @@ weeutil.logger.setup('weetest_xtypes')
 os.environ['TZ'] = 'America/Los_Angeles'
 time.tzset()
 
-# This will use the locale specified by the environment variable 'LANG'
-# Other options are possible. See:
-# https://docs.python.org/3/library/locale.html#locale.setlocale
-locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 # Month of September 2010:
 month_timespan = weeutil.weeutil.TimeSpan(1283324400, 1285916400)

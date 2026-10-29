@@ -9,13 +9,19 @@ For this test to work, MySQL user 'weewx' must have full access to database 'tes
     mysql> grant select, update, create, delete, drop, insert on test.* to weewx@localhost;
 """
 
+import os.path
+import tempfile
 import pytest
 
 import weedb
 import weedb.sqlite
 from weeutil.weeutil import version_compare
 
-sqlite_db_dict = {'database_name': '/var/tmp/test.sdb', 'driver': 'weedb.sqlite', 'timeout': '2'}
+sqlite_db_dict = {
+    'database_name': os.path.join(tempfile.gettempdir(), 'test.sdb'),
+    'driver': 'weedb.sqlite',
+    'timeout': '2'
+}
 mysql_db_dict = {'database_name': 'test_weewx1', 'user': 'weewx1', 'password': 'weewx1',
                  'driver': 'weedb.mysql'}
 
@@ -221,6 +227,21 @@ class TestSqlite(Common):
             assert _v is None
 
 
+def mysql_available():
+    try:
+        try:
+            import MySQLdb
+        except ImportError:
+            import pymysql as MySQLdb
+        conn = MySQLdb.connect(host='localhost', user='weewx1', password='weewx1', connect_timeout=1)
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+@pytest.mark.skipif(not mysql_available(),
+                    reason="MySQL server not running or unreachable on localhost")
 class TestMySQL(Common):
 
     def setup_method(self):

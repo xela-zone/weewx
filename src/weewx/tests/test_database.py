@@ -4,12 +4,14 @@
 #    See the file LICENSE.txt for your full rights.
 #
 """Test weedb and weewx.manager database modules"""
-import pytest
+import os.path
+import tempfile
 import time
 
 from io import StringIO
 
 import configobj
+import pytest
 
 import weewx.manager
 import weedb
@@ -18,7 +20,7 @@ import weeutil.logger
 
 weeutil.logger.setup('weetest_database')
 
-archive_sqlite = {'database_name': '/var/tmp/weewx-test/weedb.sdb', 'driver': 'weedb.sqlite'}
+archive_sqlite = {'database_name': os.path.join(tempfile.gettempdir(), 'weewx-test', 'weedb.sdb'), 'driver': 'weedb.sqlite'}
 archive_mysql = {'database_name': 'test_weedb', 'user': 'weewx1', 'password': 'weewx1',
                  'driver': 'weedb.mysql'}
 
@@ -74,12 +76,27 @@ def genRecords():
         yield _record
 
 
-# A fixture that returns database dicts, first for sqlite, then for mysql.
+def mysql_available():
+    try:
+        try:
+            import MySQLdb
+        except ImportError:
+            import pymysql as MySQLdb
+        conn = MySQLdb.connect(host='localhost', user='weewx1', password='weewx1', connect_timeout=1)
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+archive_params = [archive_sqlite]
+if mysql_available():
+    archive_params.append(archive_mysql)
+
+
+# A fixture that returns database dicts, for sqlite, and for mysql if available.
 @pytest.fixture(scope="session",
-                params=[
-                    archive_sqlite,
-                    archive_mysql,
-                ])
+                params=archive_params)
 def archive_db_dict(request):
     """Generate a config file set to use a particular database type
     (such as 'sqlite' or 'mysql')."""

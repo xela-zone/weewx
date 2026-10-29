@@ -28,6 +28,19 @@ else:
         from _mysql_exceptions import IntegrityError, ProgrammingError, OperationalError
 
 
+def mysql_available():
+    try:
+        conn = MySQLdb.connect(host='localhost', user='weewx1', password='weewx1', connect_timeout=1)
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+pytestmark = pytest.mark.skipif(not mysql_available(),
+                                reason="MySQL server not running or unreachable on localhost")
+
+
 def get_error(e):
     return e.value.args[0]
 
@@ -50,12 +63,15 @@ class Cursor:
         except ProgrammingError:
             pass
 
-try:
+if mysql_available():
     connection = MySQLdb.connect(host='localhost', user='weewx1', password='weewx1')
-    server_info = connection.get_server_info()
-    using_maria_db = "MariaDB" in server_info
-finally:
-    connection.close()
+    try:
+        server_info = connection.get_server_info()
+        using_maria_db = "MariaDB" in server_info
+    finally:
+        connection.close()
+else:
+    using_maria_db = False
 
 class TestMySQL:
 

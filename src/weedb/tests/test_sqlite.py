@@ -12,11 +12,12 @@
 
 import os
 import sqlite3
+import tempfile
 import pytest
 from sqlite3 import IntegrityError, OperationalError
 
 # This database should be somewhere where you have write permissions:
-sqdb1 = '/var/tmp/sqdb1.sdb'
+sqdb1 = os.path.join(tempfile.gettempdir(), 'sqdb1.sdb')
 # This database should be somewhere where you do NOT have write permissions:
 sqdb2 = '/usr/local/sqdb2.sdb'
 
