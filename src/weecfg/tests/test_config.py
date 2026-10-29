@@ -258,21 +258,31 @@ class TestConfig:
 class TestExtensionUtility:
     """Tests of utility functions used by the extension installer."""
 
-    INSTALLED_NAMES = ['/var/tmp/pmon/bin/user/pmon.py',
-                       '/var/tmp/pmon/changelog',
-                       '/var/tmp/pmon/install.py',
-                       '/var/tmp/pmon/readme.txt',
-                       '/var/tmp/pmon/skins/pmon/index.html.tmpl',
-                       '/var/tmp/pmon/skins/pmon/skin.conf']
+    @property
+    def installed_names(self):
+        return [
+            os.path.join(tempfile.gettempdir(), 'pmon', p)
+            for p in [
+                'bin/user/pmon.py',
+                'changelog',
+                'install.py',
+                'readme.txt',
+                'skins/pmon/index.html.tmpl',
+                'skins/pmon/skin.conf'
+            ]
+        ]
 
     @pytest.fixture(autouse=True)
     def setup_teardown(self):
-        shutil.rmtree('/var/tmp/pmon', ignore_errors=True)
+        pmon_dir = os.path.join(tempfile.gettempdir(), 'pmon')
+        shutil.rmtree(pmon_dir, ignore_errors=True)
         yield
-        shutil.rmtree('/var/tmp/pmon', ignore_errors=True)
+        shutil.rmtree(pmon_dir, ignore_errors=True)
 
     def test_tar_extract(self):
-        member_names = sorted(weecfg.extract_tar('./pmon.tar', '/var/tmp'))
+        tmp_dir = tempfile.gettempdir()
+        pmon_dir = os.path.join(tmp_dir, 'pmon')
+        member_names = sorted(weecfg.extract_tar('./pmon.tar', tmp_dir))
         assert member_names == ['pmon',
                                 'pmon/bin',
                                 'pmon/bin/user',
@@ -285,13 +295,15 @@ class TestExtensionUtility:
                                 'pmon/skins/pmon/index.html.tmpl',
                                 'pmon/skins/pmon/skin.conf']
         actual_files = []
-        for direc in os.walk('/var/tmp/pmon'):
+        for direc in os.walk(pmon_dir):
             for filename in direc[2]:
                 actual_files.append(os.path.join(direc[0], filename))
-        assert sorted(actual_files) == self.INSTALLED_NAMES
+        assert sorted(actual_files) == sorted(self.installed_names)
 
     def test_tgz_extract(self):
-        member_names = sorted(weecfg.extract_tar('./pmon.tgz', '/var/tmp'))
+        tmp_dir = tempfile.gettempdir()
+        pmon_dir = os.path.join(tmp_dir, 'pmon')
+        member_names = sorted(weecfg.extract_tar('./pmon.tgz', tmp_dir))
         assert member_names == ['pmon',
                                 'pmon/bin',
                                 'pmon/bin/user',
@@ -304,13 +316,15 @@ class TestExtensionUtility:
                                 'pmon/skins/pmon/index.html.tmpl',
                                 'pmon/skins/pmon/skin.conf']
         actual_files = []
-        for direc in os.walk('/var/tmp/pmon'):
+        for direc in os.walk(pmon_dir):
             for filename in direc[2]:
                 actual_files.append(os.path.join(direc[0], filename))
-        assert sorted(actual_files) == self.INSTALLED_NAMES
+        assert sorted(actual_files) == sorted(self.installed_names)
 
     def test_zip_extract(self):
-        member_names = sorted(weecfg.extract_zip('./pmon.zip', '/var/tmp'))
+        tmp_dir = tempfile.gettempdir()
+        pmon_dir = os.path.join(tmp_dir, 'pmon')
+        member_names = sorted(weecfg.extract_zip('./pmon.zip', tmp_dir))
         assert member_names == ['pmon/',
                                 'pmon/bin/',
                                 'pmon/bin/user/',
@@ -323,10 +337,10 @@ class TestExtensionUtility:
                                 'pmon/skins/pmon/index.html.tmpl',
                                 'pmon/skins/pmon/skin.conf']
         actual_files = []
-        for direc in os.walk('/var/tmp/pmon'):
+        for direc in os.walk(pmon_dir):
             for filename in direc[2]:
                 actual_files.append(os.path.join(direc[0], filename))
-        assert sorted(actual_files) == self.INSTALLED_NAMES
+        assert sorted(actual_files) == sorted(self.installed_names)
 
     def test_gen_file_paths_common(self):
         file_list = [
@@ -495,7 +509,7 @@ class TestExtensionInstall:
 
     @pytest.fixture(autouse=True)
     def setup_teardown(self):
-        self.weewx_root = '/var/tmp/wee_test'
+        self.weewx_root = os.path.join(tempfile.gettempdir(), 'wee_test')
 
         # Install the "mini-weewx"
         self._build_mini_weewx(self.weewx_root)
@@ -514,10 +528,10 @@ class TestExtensionInstall:
 
     def test_file_install(self):
         # Make sure the root dictionary got calculated correctly:
-        assert self.engine.root_dict['WEEWX_ROOT'] == '/var/tmp/wee_test'
-        assert self.engine.root_dict['USER_DIR'] == '/var/tmp/wee_test/bin/user'
-        assert self.engine.root_dict['EXT_DIR'] == '/var/tmp/wee_test/bin/user/installer'
-        assert self.engine.root_dict['SKIN_DIR'] == '/var/tmp/wee_test/skins'
+        assert self.engine.root_dict['WEEWX_ROOT'] == self.weewx_root
+        assert self.engine.root_dict['USER_DIR'] == os.path.join(self.weewx_root, 'bin/user')
+        assert self.engine.root_dict['EXT_DIR'] == os.path.join(self.weewx_root, 'bin/user/installer')
+        assert self.engine.root_dict['SKIN_DIR'] == os.path.join(self.weewx_root, 'skins')
 
         # Now install the extension...
         self.engine.install_extension('./pmon.tgz', no_confirm=True, extra_args=['--foo', 'bar'])

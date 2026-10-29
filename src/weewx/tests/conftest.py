@@ -7,6 +7,7 @@
 import logging
 import os.path
 import sys
+import tempfile
 
 import configobj
 import pytest
@@ -48,6 +49,7 @@ def build_config(request):
         raise
 
     # Patch the config file so that the two bindings use the appropriate database:
+    weewx_config['WEEWX_ROOT'] = os.path.join(tempfile.gettempdir(), 'weewx-test')
     weewx_config['DataBindings']['wx_binding']['database'] = "archive_" + db_type
     weewx_config['DataBindings']['alt_binding']['database'] = "alt_" + db_type
 

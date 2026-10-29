@@ -4,12 +4,14 @@
 #    See the file LICENSE.txt for your full rights.
 #
 """Test weedb and weewx.manager database modules"""
-import pytest
+import os.path
+import tempfile
 import time
 
 from io import StringIO
 
 import configobj
+import pytest
 
 import weewx.manager
 import weedb
@@ -18,7 +20,7 @@ import weeutil.logger
 
 weeutil.logger.setup('weetest_database')
 
-archive_sqlite = {'database_name': '/var/tmp/weewx-test/weedb.sdb', 'driver': 'weedb.sqlite'}
+archive_sqlite = {'database_name': os.path.join(tempfile.gettempdir(), 'weewx-test', 'weedb.sdb'), 'driver': 'weedb.sqlite'}
 archive_mysql = {'database_name': 'test_weedb', 'user': 'weewx1', 'password': 'weewx1',
                  'driver': 'weedb.mysql'}
 
