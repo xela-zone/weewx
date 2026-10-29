@@ -221,6 +221,21 @@ class TestSqlite(Common):
             assert _v is None
 
 
+def mysql_available():
+    try:
+        try:
+            import MySQLdb
+        except ImportError:
+            import pymysql as MySQLdb
+        conn = MySQLdb.connect(host='localhost', user='weewx1', password='weewx1', connect_timeout=1)
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+@pytest.mark.skipif(not mysql_available(),
+                    reason="MySQL server not running or unreachable on localhost")
 class TestMySQL(Common):
 
     def setup_method(self):

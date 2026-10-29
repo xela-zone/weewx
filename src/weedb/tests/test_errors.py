@@ -41,33 +41,45 @@ else:
              "Change the permissions and try again." % sqdb2_dict['database_name'])
 
 
+def mysql_available():
+    try:
+        try:
+            import MySQLdb
+        except ImportError:
+            import pymysql as MySQLdb
+        conn = MySQLdb.connect(host='localhost', user='weewx1', password='weewx1', connect_timeout=1)
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+HAS_MYSQL = mysql_available()
+
+
 class TestErrors:
 
     @pytest.fixture(autouse=True)
     def setup(self):
         """Drop the old databases, in preparation for running a test."""
-        try:
-            import MySQLdb
-        except ImportError:
+        if HAS_MYSQL:
             try:
-                import pymysql as MySQLdb
-            except ImportError as e:
-                pytest.skip(str(e))
-        try:
-            weedb.drop(mysql1_dict)
-        except weedb.NoDatabase:
-            pass
+                weedb.drop(mysql1_dict)
+            except weedb.NoDatabase:
+                pass
         try:
             weedb.drop(sqdb1_dict)
         except weedb.NoDatabase:
             pass
 
+    @pytest.mark.skipif(not HAS_MYSQL, reason="MySQL server not running or unreachable")
     def test_bad_host(self):
         mysql_dict = dict(mysql1_dict)
         mysql_dict['host'] = 'foohost'
         with pytest.raises(weedb.CannotConnectError):
             weedb.connect(mysql_dict)
 
+    @pytest.mark.skipif(not HAS_MYSQL, reason="MySQL server not running or unreachable")
     def test_bad_password(self):
         mysql_dict = dict(mysql1_dict)
         mysql_dict['password'] = 'badpw'
@@ -75,15 +87,17 @@ class TestErrors:
             weedb.connect(mysql_dict)
 
     def test_drop_nonexistent_database(self):
-        with pytest.raises(weedb.NoDatabase):
-            weedb.drop(mysql1_dict)
+        if HAS_MYSQL:
+            with pytest.raises(weedb.NoDatabase):
+                weedb.drop(mysql1_dict)
         with pytest.raises(weedb.NoDatabase):
             weedb.drop(sqdb1_dict)
 
     def test_drop_nopermission(self):
-        weedb.create(mysql1_dict)
-        with pytest.raises(weedb.PermissionError):
-            weedb.drop(mysql2_dict)
+        if HAS_MYSQL:
+            weedb.create(mysql1_dict)
+            with pytest.raises(weedb.PermissionError):
+                weedb.drop(mysql2_dict)
         weedb.create(sqdb1_dict)
         # Can't really test this one without setting up a file where
         # we have no write permission
@@ -91,25 +105,29 @@ class TestErrors:
             weedb.drop(sqdb2_dict)
 
     def test_create_nopermission(self):
-        with pytest.raises(weedb.PermissionError):
-            weedb.create(mysql2_dict)
+        if HAS_MYSQL:
+            with pytest.raises(weedb.PermissionError):
+                weedb.create(mysql2_dict)
         with pytest.raises(weedb.PermissionError):
             weedb.create(sqdb2_dict)
 
     def test_double_db_create(self):
-        weedb.create(mysql1_dict)
-        with pytest.raises(weedb.DatabaseExists):
+        if HAS_MYSQL:
             weedb.create(mysql1_dict)
+            with pytest.raises(weedb.DatabaseExists):
+                weedb.create(mysql1_dict)
         weedb.create(sqdb1_dict)
         with pytest.raises(weedb.DatabaseExists):
             weedb.create(sqdb1_dict)
 
     def test_open_nonexistent_database(self):
-        with pytest.raises(weedb.OperationalError):
-            connect = weedb.connect(mysql1_dict)
+        if HAS_MYSQL:
+            with pytest.raises(weedb.OperationalError):
+                connect = weedb.connect(mysql1_dict)
         with pytest.raises(weedb.OperationalError):
             connect = weedb.connect(sqdb1_dict)
 
+    @pytest.mark.skipif(not HAS_MYSQL, reason="MySQL server not running or unreachable")
     def test_select_nonexistent_database(self):
         mysql_dict = dict(mysql1_dict)
         mysql_dict.pop('database_name')
@@ -135,7 +153,8 @@ class TestErrors:
             cursor.close()
             connect.close()
 
-        test(mysql1_dict)
+        if HAS_MYSQL:
+            test(mysql1_dict)
         test(sqdb1_dict)
 
     def test_double_table_create(self):
@@ -149,7 +168,8 @@ class TestErrors:
             cursor.close()
             connect.close()
 
-        test(mysql1_dict)
+        if HAS_MYSQL:
+            test(mysql1_dict)
         test(sqdb1_dict)
 
     def test_select_nonexistent_column(self):
@@ -163,7 +183,8 @@ class TestErrors:
             cursor.close()
             connect.close()
 
-        test(mysql1_dict)
+        if HAS_MYSQL:
+            test(mysql1_dict)
         test(sqdb1_dict)
 
     def test_duplicate_key(self):
@@ -178,6 +199,7 @@ class TestErrors:
             cursor.close()
             connect.close()
 
-        test(mysql1_dict)
+        if HAS_MYSQL:
+            test(mysql1_dict)
         test(sqdb1_dict)
 

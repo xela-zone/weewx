@@ -74,12 +74,27 @@ def genRecords():
         yield _record
 
 
-# A fixture that returns database dicts, first for sqlite, then for mysql.
+def mysql_available():
+    try:
+        try:
+            import MySQLdb
+        except ImportError:
+            import pymysql as MySQLdb
+        conn = MySQLdb.connect(host='localhost', user='weewx1', password='weewx1', connect_timeout=1)
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+archive_params = [archive_sqlite]
+if mysql_available():
+    archive_params.append(archive_mysql)
+
+
+# A fixture that returns database dicts, for sqlite, and for mysql if available.
 @pytest.fixture(scope="session",
-                params=[
-                    archive_sqlite,
-                    archive_mysql,
-                ])
+                params=archive_params)
 def archive_db_dict(request):
     """Generate a config file set to use a particular database type
     (such as 'sqlite' or 'mysql')."""

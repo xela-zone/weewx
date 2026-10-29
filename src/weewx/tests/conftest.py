@@ -21,13 +21,27 @@ log = logging.getLogger(__name__)
 weeutil.logger.setup('conftest')
 
 
-# Run the tests twice, once with sqlite and once with mysql
+def mysql_available():
+    try:
+        try:
+            import MySQLdb
+        except ImportError:
+            import pymysql as MySQLdb
+        conn = MySQLdb.connect(host='localhost', user='weewx1', password='weewx1', connect_timeout=1)
+        conn.close()
+        return True
+    except Exception:
+        return False
+
+
+db_params = ['sqlite']
+if mysql_available():
+    db_params.append('mysql')
+
+
+# Run the tests with sqlite, and also mysql if available
 @pytest.fixture(scope="session",
-                params=[
-                    'sqlite',
-                    'mysql',
-                    # 'postgresql',
-                ])
+                params=db_params)
 def build_config(request):
     """Generate a config file set to use a particular database type
     (such as 'sqlite' or 'mysql')."""
