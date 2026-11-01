@@ -1950,6 +1950,7 @@ def get_test_dir():
             else tempfile.gettempdir()
         )
         test_dir = os.path.join(base, 'weewx-test')
+    test_dir = os.path.normpath(test_dir)
     os.makedirs(test_dir, exist_ok=True)
     return test_dir
 
